@@ -19,39 +19,74 @@ const IconTrophy = () => (
   </svg>
 );
 
-// Marco y colores para top 3
 const MEDAL_CONFIG = {
   0: {
-    ring: "3px solid #FFB800",
-    shadow: "0 0 0 5px rgba(255,184,0,0.22), 0 0 18px rgba(255,184,0,0.45)",
-    numBg: "linear-gradient(135deg, #FFE066 0%, #FFB800 50%, #FF8C00 100%)",
-    numColor: "#7A4500",
-    numShadow: "0 0 10px rgba(255,180,0,0.7)",
+    outerRing: "3px solid #5A3800",
+    ring: "3px solid #FFD700",
+    shadow: `0 0 0 2px #5A3800, 0 0 0 5px #FFD700, 0 0 0 7px #B8860B, 0 0 22px rgba(255,215,0,0.65), 0 0 44px rgba(255,165,0,0.3)`,
+    numBg:
+      "linear-gradient(135deg, #FFE566 0%, #FFD700 40%, #FFA500 70%, #CC8800 100%)",
+    numColor: "#5A3000",
+    numShadow: "0 0 8px rgba(255,180,0,0.9)",
+    crownColor: "#FFD700",
+    crownShadow: "0 0 6px rgba(255,215,0,0.9)",
+    ribbonBg: "#CC1111",
+    ribbonTop: "#FF2222",
     label: "Líder",
     size: 46,
-    fontSize: 24,
+    badgeSize: 15,
   },
   1: {
-    ring: "3px solid #C8C8C8",
-    shadow: "0 0 0 4px rgba(200,200,200,0.18), 0 0 14px rgba(200,200,200,0.35)",
-    numBg: "linear-gradient(135deg, #F0F0F0 0%, #C8C8C8 50%, #A0A0A0 100%)",
-    numColor: "#3A3A3A",
-    numShadow: "0 0 8px rgba(200,200,200,0.6)",
+    outerRing: "3px solid #333",
+    ring: "3px solid #D0D0D0",
+    shadow: `0 0 0 2px #333, 0 0 0 5px #D0D0D0, 0 0 0 7px #888, 0 0 16px rgba(200,200,200,0.5), 0 0 30px rgba(180,180,180,0.2)`,
+    numBg:
+      "linear-gradient(135deg, #FFFFFF 0%, #D8D8D8 40%, #B0B0B0 70%, #808080 100%)",
+    numColor: "#2A2A2A",
+    numShadow: "0 0 6px rgba(200,200,200,0.8)",
+    crownColor: "#C8C8C8",
+    crownShadow: "0 0 5px rgba(200,200,200,0.8)",
+    ribbonBg: "#444488",
+    ribbonTop: "#6666BB",
     label: "2° lugar",
     size: 42,
-    fontSize: 22,
+    badgeSize: 14,
   },
   2: {
-    ring: "3px solid #CD8C52",
-    shadow: "0 0 0 4px rgba(180,106,42,0.18), 0 0 14px rgba(180,106,42,0.35)",
-    numBg: "linear-gradient(135deg, #E0A060 0%, #B46A2A 50%, #8B4513 100%)",
-    numColor: "#3A1A08",
-    numShadow: "0 0 8px rgba(180,106,42,0.6)",
+    outerRing: "3px solid #3A1A00",
+    ring: "3px solid #CD8B3A",
+    shadow: `0 0 0 2px #3A1A00, 0 0 0 5px #CD8B3A, 0 0 0 7px #7B4A18, 0 0 14px rgba(180,106,42,0.55), 0 0 28px rgba(150,80,20,0.25)`,
+    numBg:
+      "linear-gradient(135deg, #F5D09A 0%, #CD8B3A 40%, #A06020 70%, #7B4A18 100%)",
+    numColor: "#2A0E00",
+    numShadow: "0 0 6px rgba(180,100,30,0.8)",
+    crownColor: "#CD8B3A",
+    crownShadow: "0 0 5px rgba(180,100,30,0.8)",
+    ribbonBg: "#774411",
+    ribbonTop: "#AA6633",
     label: "3° lugar",
-    size: 40,
-    fontSize: 20,
+    size: 38,
+    badgeSize: 13,
   },
 };
+
+const Crown = ({ color, shadow }) => (
+  <div
+    style={{
+      position: "absolute",
+      top: -18,
+      left: "50%",
+      transform: "translateX(-50%)",
+      fontSize: 18,
+      lineHeight: 1,
+      filter: `drop-shadow(0 0 5px ${color})`,
+      zIndex: 10,
+      pointerEvents: "none",
+    }}
+  >
+    👑
+  </div>
+);
 
 const PlayerAvatar = ({ avatar, position }) => {
   const cfg = MEDAL_CONFIG[position];
@@ -60,17 +95,17 @@ const PlayerAvatar = ({ avatar, position }) => {
 
   if (isTop3) {
     return (
-      <div style={{ position: "relative", flexShrink: 0 }}>
+      <div style={{ position: "relative", flexShrink: 0, marginTop: 10 }}>
+        <Crown color={cfg.crownColor} shadow={cfg.crownShadow} />
         <div
           style={{
             width: avatarSize,
             height: avatarSize,
             borderRadius: "50%",
-            border: cfg.ring,
             boxShadow: cfg.shadow,
-            background: "rgba(30,41,59,0.9)",
+            background: "#0F172A",
             overflow: "hidden",
-            transition: "transform 0.15s",
+            position: "relative",
           }}
         >
           <img
@@ -83,27 +118,43 @@ const PlayerAvatar = ({ avatar, position }) => {
               display: "block",
             }}
           />
+          {/* Shine */}
+          <div
+            style={{
+              position: "absolute",
+              top: 0,
+              left: 0,
+              width: "100%",
+              height: "50%",
+              background:
+                "linear-gradient(to bottom, rgba(255,255,255,0.18), transparent)",
+              borderRadius: "50% 50% 0 0",
+              pointerEvents: "none",
+            }}
+          />
         </div>
+        {/* Badge número */}
         <div
           style={{
             position: "absolute",
-            bottom: -4,
-            right: -4,
-            width: 18,
-            height: 18,
+            bottom: -5,
+            right: -5,
+            width: 20,
+            height: 20,
             borderRadius: "50%",
             background: cfg.numBg,
             boxShadow: cfg.numShadow,
-            border: "1.5px solid rgba(0,0,0,0.3)",
+            border: "1.5px solid rgba(0,0,0,0.4)",
             display: "flex",
             alignItems: "center",
             justifyContent: "center",
+            zIndex: 5,
           }}
         >
           <span
             style={{
               color: cfg.numColor,
-              fontSize: 10,
+              fontSize: cfg.badgeSize,
               fontWeight: 900,
               lineHeight: 1,
             }}
@@ -148,7 +199,7 @@ const PlayerAvatar = ({ avatar, position }) => {
           width: avatarSize,
           height: avatarSize,
           borderRadius: "50%",
-          background: "rgba(30,41,59,0.9)",
+          background: "#0F172A",
           border: "1.5px solid rgba(255,255,255,0.1)",
           overflow: "hidden",
         }}
@@ -174,9 +225,6 @@ export default function Ranking({ user }) {
 
   useEffect(() => {
     loadRanking();
-
-    // Realtime: cuando cualquier perfil actualice sus puntos,
-    // recarga el ranking completo (necesitamos reordenar la lista)
     const channel = supabase
       .channel("ranking-profiles-updates")
       .on(
@@ -187,7 +235,6 @@ export default function Ranking({ user }) {
         },
       )
       .subscribe();
-
     return () => {
       supabase.removeChannel(channel);
     };
@@ -198,8 +245,7 @@ export default function Ranking({ user }) {
     const { data, error } = await supabase
       .from("profiles")
       .select("id, username, total_points, avatar")
-      .order("total_points", { ascending: false })
-      .limit(10);
+      .order("total_points", { ascending: false });
     if (error) console.error(error);
     else setPlayers(data || []);
     if (!silent) setLoading(false);
@@ -231,7 +277,9 @@ export default function Ranking({ user }) {
             Ranking Global
           </h1>
           <p style={{ margin: 0, fontSize: 11, color: "#94A3B8" }}>
-            Los 10 mejores predictores
+            {players.length > 0
+              ? `${players.length} jugador${players.length !== 1 ? "es" : ""}`
+              : "Todos los predictores"}
           </p>
         </div>
       </header>
@@ -269,7 +317,7 @@ export default function Ranking({ user }) {
             backdropFilter: "blur(16px)",
             border: "1px solid rgba(255,255,255,0.08)",
             borderRadius: 16,
-            overflow: "hidden",
+            overflow: "visible",
             boxShadow: "0 20px 60px rgba(0,0,0,0.4)",
           }}
         >
@@ -279,11 +327,11 @@ export default function Ranking({ user }) {
             const cfg = MEDAL_CONFIG[i];
             const ptColor =
               i === 0
-                ? "#FFB800"
+                ? "#FFD700"
                 : i === 1
                   ? "#C8C8C8"
                   : i === 2
-                    ? "#CD8C52"
+                    ? "#CD8B3A"
                     : "#FBBF24";
 
             return (
@@ -300,10 +348,21 @@ export default function Ranking({ user }) {
                       : "none",
                   background: isCurrentUser
                     ? "rgba(22,163,74,0.12)"
-                    : isTop3
-                      ? "rgba(255,255,255,0.02)"
-                      : "transparent",
+                    : i === 0
+                      ? "rgba(255,215,0,0.04)"
+                      : i === 1
+                        ? "rgba(200,200,200,0.03)"
+                        : i === 2
+                          ? "rgba(180,100,30,0.04)"
+                          : "transparent",
+                  borderRadius:
+                    i === 0
+                      ? "16px 16px 0 0"
+                      : i === players.length - 1
+                        ? "0 0 16px 16px"
+                        : 0,
                   transition: "background 0.15s",
+                  overflow: "visible",
                 }}
               >
                 <div
@@ -311,6 +370,7 @@ export default function Ranking({ user }) {
                     display: "flex",
                     alignItems: "center",
                     gap: isTop3 ? 14 : 10,
+                    overflow: "visible",
                   }}
                 >
                   <PlayerAvatar avatar={player.avatar} position={i} />
@@ -318,7 +378,7 @@ export default function Ranking({ user }) {
                     <span
                       style={{
                         fontSize: isTop3 ? 14 : 13,
-                        fontWeight: 600,
+                        fontWeight: 700,
                         display: "block",
                         color: isCurrentUser
                           ? "#16A34A"
@@ -345,10 +405,9 @@ export default function Ranking({ user }) {
                       <span
                         style={{
                           fontSize: 10,
-                          color: cfg?.numBg
-                            ? "rgba(148,163,184,0.65)"
-                            : "rgba(148,163,184,0.45)",
-                          fontWeight: 500,
+                          color: ptColor,
+                          fontWeight: 600,
+                          opacity: 0.85,
                         }}
                       >
                         {cfg?.label}
@@ -356,21 +415,37 @@ export default function Ranking({ user }) {
                     )}
                   </div>
                 </div>
-                <span
-                  style={{
-                    fontWeight: 700,
-                    fontVariantNumeric: "tabular-nums",
-                    fontSize: isTop3 ? 15 : 13,
-                    color: ptColor,
-                  }}
-                >
-                  {player.total_points} pts
-                </span>
+
+                <div style={{ textAlign: "right" }}>
+                  <span
+                    style={{
+                      fontWeight: 800,
+                      fontVariantNumeric: "tabular-nums",
+                      fontSize: isTop3 ? 16 : 13,
+                      color: ptColor,
+                      textShadow: isTop3 ? `0 0 12px ${ptColor}55` : "none",
+                    }}
+                  >
+                    {player.total_points ?? 0}
+                    <span
+                      style={{
+                        fontSize: isTop3 ? 11 : 10,
+                        fontWeight: 600,
+                        marginLeft: 2,
+                        opacity: 0.8,
+                      }}
+                    >
+                      pts
+                    </span>
+                  </span>
+                </div>
               </div>
             );
           })}
         </div>
       )}
+
+      <div style={{ height: 24 }} />
     </div>
   );
 }
