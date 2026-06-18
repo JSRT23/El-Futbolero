@@ -374,20 +374,351 @@ const TeamFlag = ({ name }) => {
   );
 };
 
+// ─── Tarjeta de partido + predicción (compartida entre Hoy / Historial) ───────
+const MatchPredictionCard = ({ m }) => {
+  const hasPred = m.pred !== null;
+  const ps = getPtStyle(hasPred ? (m.pred.points ?? 0) : -1);
+  const isLive = m.status === "live";
+  const fecha = new Date(m.match_date).toLocaleDateString("es-CO", {
+    timeZone: "America/Bogota",
+    day: "numeric",
+    month: "short",
+  });
+
+  return (
+    <div
+      style={{
+        marginBottom: 10,
+        background: "rgba(255,255,255,0.03)",
+        border: "1px solid rgba(255,255,255,0.07)",
+        borderRadius: 14,
+        overflow: "hidden",
+      }}
+    >
+      {/* Fecha + status */}
+      <div
+        style={{
+          padding: "7px 12px 0",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        <span
+          style={{
+            fontSize: 10,
+            color: "#334155",
+            fontWeight: 600,
+          }}
+        >
+          {fecha}
+        </span>
+        {isLive && (
+          <span
+            style={{
+              fontSize: 9,
+              fontWeight: 700,
+              color: "#EF4444",
+              background: "rgba(239,68,68,0.15)",
+              padding: "1px 6px",
+              borderRadius: 99,
+              display: "flex",
+              alignItems: "center",
+              gap: 3,
+            }}
+          >
+            <span
+              style={{
+                width: 5,
+                height: 5,
+                borderRadius: "50%",
+                background: "#EF4444",
+                display: "inline-block",
+              }}
+            />
+            EN VIVO
+          </span>
+        )}
+      </div>
+
+      {/* Equipos y marcador */}
+      <div
+        style={{
+          padding: "8px 12px 10px",
+          display: "flex",
+          alignItems: "center",
+          gap: 6,
+        }}
+      >
+        {/* Local */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flex: 1,
+            minWidth: 0,
+          }}
+        >
+          <TeamFlag name={m.team_home} />
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#CBD5E1",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+            }}
+          >
+            {m.team_home}
+          </span>
+        </div>
+
+        {/* Marcador */}
+        <div
+          style={{
+            textAlign: "center",
+            flexShrink: 0,
+            minWidth: 52,
+          }}
+        >
+          <div
+            style={{
+              fontSize: 17,
+              fontWeight: 900,
+              color: "#F1F5F9",
+              fontVariantNumeric: "tabular-nums",
+              letterSpacing: 1,
+              lineHeight: 1,
+            }}
+          >
+            {m.score_home !== null ? `${m.score_home}-${m.score_away}` : "-"}
+          </div>
+          <div style={{ fontSize: 9, color: "#334155", marginTop: 2 }}>
+            resultado
+          </div>
+        </div>
+
+        {/* Visitante */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            gap: 6,
+            flex: 1,
+            minWidth: 0,
+            justifyContent: "flex-end",
+          }}
+        >
+          <span
+            style={{
+              fontSize: 12,
+              fontWeight: 600,
+              color: "#CBD5E1",
+              whiteSpace: "nowrap",
+              overflow: "hidden",
+              textOverflow: "ellipsis",
+              textAlign: "right",
+            }}
+          >
+            {m.team_away}
+          </span>
+          <TeamFlag name={m.team_away} />
+        </div>
+      </div>
+
+      {/* Predicción + puntos */}
+      <div
+        style={{
+          borderTop: "1px solid rgba(255,255,255,0.06)",
+          padding: "10px 12px",
+          background: hasPred ? ps.bg : "rgba(0,0,0,0.1)",
+        }}
+      >
+        {/* Fila principal: predicción y badge de puntos */}
+        <div
+          style={{
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "space-between",
+          }}
+        >
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              gap: 8,
+            }}
+          >
+            <span style={{ fontSize: 11, color: "#475569" }}>
+              Su predicción:
+            </span>
+            {hasPred ? (
+              <span
+                style={{
+                  fontSize: 16,
+                  fontWeight: 900,
+                  color: ps.color,
+                  fontVariantNumeric: "tabular-nums",
+                  letterSpacing: 1,
+                }}
+              >
+                {m.pred.pred_home}-{m.pred.pred_away}
+              </span>
+            ) : (
+              <span
+                style={{
+                  fontSize: 12,
+                  color: "#334155",
+                  fontStyle: "italic",
+                }}
+              >
+                Sin predicción
+              </span>
+            )}
+          </div>
+          {hasPred && (
+            <div
+              style={{
+                display: "flex",
+                alignItems: "center",
+                gap: 6,
+              }}
+            >
+              <span
+                style={{
+                  fontSize: 10,
+                  color: ps.color,
+                  fontWeight: 600,
+                }}
+              >
+                {ps.label}
+              </span>
+              <div
+                style={{
+                  background: "rgba(0,0,0,0.25)",
+                  border: `1px solid ${ps.border}`,
+                  borderRadius: 8,
+                  padding: "3px 9px",
+                }}
+              >
+                <span
+                  style={{
+                    fontSize: 13,
+                    fontWeight: 900,
+                    color: ps.color,
+                  }}
+                >
+                  {(m.pred.points ?? 0) > 0 ? `+${m.pred.points}` : "0"} pts
+                </span>
+              </div>
+            </div>
+          )}
+        </div>
+
+        {/* Desglose de puntos */}
+        {hasPred &&
+          m.score_home !== null &&
+          (() => {
+            const { detalles } = desglosePuntos(
+              m.pred.pred_home,
+              m.pred.pred_away,
+              m.score_home,
+              m.score_away,
+            );
+            return (
+              <div
+                style={{
+                  marginTop: 8,
+                  display: "flex",
+                  flexWrap: "wrap",
+                  gap: 4,
+                }}
+              >
+                {detalles.map((d, idx) => {
+                  const esSinPts = d.startsWith("Sin");
+                  const esExacto = d.includes("exacto");
+                  const color = esExacto
+                    ? "#22C55E"
+                    : esSinPts
+                      ? "#475569"
+                      : "#60A5FA";
+                  const bg = esExacto
+                    ? "rgba(34,197,94,0.12)"
+                    : esSinPts
+                      ? "rgba(71,85,105,0.15)"
+                      : "rgba(96,165,250,0.12)";
+                  return (
+                    <span
+                      key={idx}
+                      style={{
+                        fontSize: 10,
+                        fontWeight: 600,
+                        color,
+                        background: bg,
+                        border: `1px solid ${color}33`,
+                        borderRadius: 6,
+                        padding: "2px 7px",
+                        lineHeight: 1.6,
+                      }}
+                    >
+                      {d}
+                    </span>
+                  );
+                })}
+              </div>
+            );
+          })()}
+      </div>
+    </div>
+  );
+};
+
+// ─── Agrupa partidos por fecha (clave YYYY-MM-DD en hora Bogotá) ──────────────
+function groupByDate(matches) {
+  const groups = new Map();
+  for (const m of matches) {
+    const key = new Date(m.match_date).toLocaleDateString("en-CA", {
+      timeZone: "America/Bogota",
+    }); // "2026-06-15" — ordenable como string
+    if (!groups.has(key)) groups.set(key, []);
+    groups.get(key).push(m);
+  }
+  // Más reciente primero
+  return Array.from(groups.entries()).sort((a, b) => (a[0] < b[0] ? 1 : -1));
+}
+
+function formatGroupHeader(dateKey) {
+  // dateKey = "YYYY-MM-DD" interpretado como medianoche en Bogotá
+  const d = new Date(`${dateKey}T12:00:00-05:00`);
+  const label = d.toLocaleDateString("es-CO", {
+    timeZone: "America/Bogota",
+    day: "numeric",
+    month: "short",
+  });
+  return label;
+}
+
 // ─── Modal ────────────────────────────────────────────────────────────────────
 const PredictionsModal = ({ player, onClose }) => {
-  const [preds, setPreds] = useState([]);
-  const [loading, setLoading] = useState(true);
+  const [tab, setTab] = useState("today"); // "today" | "history"
+  const [todayPreds, setTodayPreds] = useState([]);
+  const [historyPreds, setHistoryPreds] = useState([]);
+  const [loadingToday, setLoadingToday] = useState(true);
+  const [loadingHistory, setLoadingHistory] = useState(false);
+  const [historyLoaded, setHistoryLoaded] = useState(false);
 
+  // Carga partidos de hoy (en vivo o finalizados) — comportamiento original
   useEffect(() => {
-    const fetchPreds = async () => {
+    const fetchToday = async () => {
+      setLoadingToday(true);
       // Rango de "hoy" en hora Colombia (UTC-5)
       const nowCO = new Date(Date.now() - 5 * 60 * 60 * 1000);
       const yyyymmdd = nowCO.toISOString().slice(0, 10); // "2026-06-15"
       const todayStart = new Date(`${yyyymmdd}T00:00:00-05:00`).toISOString();
       const todayEnd = new Date(`${yyyymmdd}T23:59:59-05:00`).toISOString();
 
-      // 1. Partidos de hoy que ya cerraron o están en vivo
       const { data: matches } = await supabase
         .from("matches")
         .select(
@@ -399,11 +730,11 @@ const PredictionsModal = ({ player, onClose }) => {
         .order("match_date", { ascending: true });
 
       if (!matches || matches.length === 0) {
-        setLoading(false);
+        setTodayPreds([]);
+        setLoadingToday(false);
         return;
       }
 
-      // 2. Predicciones del jugador para esos partidos
       const matchIds = matches.map((m) => m.id);
       const { data: predictions } = await supabase
         .from("predictions")
@@ -414,12 +745,57 @@ const PredictionsModal = ({ player, onClose }) => {
       const predMap = {};
       for (const p of predictions || []) predMap[p.match_id] = p;
 
-      // Mostrar TODOS los partidos cerrados de hoy; pred null = no predijo
-      setPreds(matches.map((m) => ({ ...m, pred: predMap[m.id] ?? null })));
-      setLoading(false);
+      setTodayPreds(
+        matches.map((m) => ({ ...m, pred: predMap[m.id] ?? null })),
+      );
+      setLoadingToday(false);
     };
-    fetchPreds();
+    fetchToday();
   }, [player.id]);
+
+  // Carga el historial completo (todos los partidos finalizados, cualquier fecha)
+  // solo la primera vez que se entra a la pestaña "Historial".
+  useEffect(() => {
+    if (tab !== "history" || historyLoaded) return;
+
+    const fetchHistory = async () => {
+      setLoadingHistory(true);
+
+      const { data: matches } = await supabase
+        .from("matches")
+        .select(
+          "id, team_home, team_away, score_home, score_away, status, match_date",
+        )
+        .eq("status", "finished")
+        .order("match_date", { ascending: false });
+
+      if (!matches || matches.length === 0) {
+        setHistoryPreds([]);
+        setLoadingHistory(false);
+        setHistoryLoaded(true);
+        return;
+      }
+
+      const matchIds = matches.map((m) => m.id);
+      const { data: predictions } = await supabase
+        .from("predictions")
+        .select("match_id, pred_home, pred_away, points")
+        .eq("user_id", player.id)
+        .in("match_id", matchIds);
+
+      const predMap = {};
+      for (const p of predictions || []) predMap[p.match_id] = p;
+
+      setHistoryPreds(
+        matches.map((m) => ({ ...m, pred: predMap[m.id] ?? null })),
+      );
+      setLoadingHistory(false);
+      setHistoryLoaded(true);
+    };
+    fetchHistory();
+  }, [tab, historyLoaded, player.id]);
+
+  const historyGroups = groupByDate(historyPreds);
 
   return (
     <div
@@ -545,11 +921,6 @@ const PredictionsModal = ({ player, onClose }) => {
                   >
                     ⚡ {player.total_points ?? 0} pts totales
                   </span>
-                  {preds.length > 0 && (
-                    <span style={{ fontSize: 11, color: "#475569" }}>
-                      · {preds.length} pred{preds.length !== 1 ? "s" : ""}
-                    </span>
-                  )}
                 </div>
               </div>
             </div>
@@ -571,6 +942,58 @@ const PredictionsModal = ({ player, onClose }) => {
           </div>
         </div>
 
+        {/* Tabs Hoy / Historial */}
+        <div
+          style={{
+            display: "flex",
+            gap: 6,
+            padding: "10px 16px",
+            borderBottom: "1px solid rgba(255,255,255,0.07)",
+            flexShrink: 0,
+          }}
+        >
+          <button
+            onClick={() => setTab("today")}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+              background:
+                tab === "today"
+                  ? "rgba(22,163,74,0.18)"
+                  : "rgba(255,255,255,0.04)",
+              color: tab === "today" ? "#22C55E" : "#94A3B8",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            Hoy
+          </button>
+          <button
+            onClick={() => setTab("history")}
+            style={{
+              flex: 1,
+              padding: "8px 0",
+              borderRadius: 10,
+              border: "none",
+              cursor: "pointer",
+              fontSize: 13,
+              fontWeight: 700,
+              background:
+                tab === "history"
+                  ? "rgba(22,163,74,0.18)"
+                  : "rgba(255,255,255,0.04)",
+              color: tab === "history" ? "#22C55E" : "#94A3B8",
+              transition: "background 0.15s, color 0.15s",
+            }}
+          >
+            Historial
+          </button>
+        </div>
+
         {/* FIX: minHeight: 0 es clave para que flex+overflow funcione */}
         <div
           style={{
@@ -581,336 +1004,97 @@ const PredictionsModal = ({ player, onClose }) => {
             WebkitOverflowScrolling: "touch",
           }}
         >
-          {loading && (
-            <p
-              style={{
-                color: "#94A3B8",
-                textAlign: "center",
-                padding: "32px 0",
-                fontSize: 13,
-              }}
-            >
-              Cargando predicciones...
-            </p>
-          )}
-
-          {!loading && preds.length === 0 && (
-            <div style={{ textAlign: "center", padding: "40px 0" }}>
-              <p style={{ fontSize: 32, margin: "0 0 8px" }}>🔒</p>
-              <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>
-                No hay partidos cerrados hoy con predicciones visibles
-              </p>
-            </div>
-          )}
-
-          {!loading &&
-            preds.map((m) => {
-              const hasPred = m.pred !== null;
-              const ps = getPtStyle(hasPred ? (m.pred.points ?? 0) : -1);
-              const isLive = m.status === "live";
-              const fecha = new Date(m.match_date).toLocaleDateString("es-CO", {
-                timeZone: "America/Bogota",
-                day: "numeric",
-                month: "short",
-              });
-
-              return (
-                <div
-                  key={m.id}
+          {tab === "today" && (
+            <>
+              {loadingToday && (
+                <p
                   style={{
-                    marginBottom: 10,
-                    background: "rgba(255,255,255,0.03)",
-                    border: "1px solid rgba(255,255,255,0.07)",
-                    borderRadius: 14,
-                    overflow: "hidden",
+                    color: "#94A3B8",
+                    textAlign: "center",
+                    padding: "32px 0",
+                    fontSize: 13,
                   }}
                 >
-                  {/* Fecha + status */}
-                  <div
-                    style={{
-                      padding: "7px 12px 0",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    <span
-                      style={{
-                        fontSize: 10,
-                        color: "#334155",
-                        fontWeight: 600,
-                      }}
-                    >
-                      {fecha}
-                    </span>
-                    {isLive && (
-                      <span
-                        style={{
-                          fontSize: 9,
-                          fontWeight: 700,
-                          color: "#EF4444",
-                          background: "rgba(239,68,68,0.15)",
-                          padding: "1px 6px",
-                          borderRadius: 99,
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 3,
-                        }}
-                      >
-                        <span
-                          style={{
-                            width: 5,
-                            height: 5,
-                            borderRadius: "50%",
-                            background: "#EF4444",
-                            display: "inline-block",
-                          }}
-                        />
-                        EN VIVO
-                      </span>
-                    )}
-                  </div>
+                  Cargando predicciones...
+                </p>
+              )}
 
-                  {/* Equipos y marcador */}
-                  <div
-                    style={{
-                      padding: "8px 12px 10px",
-                      display: "flex",
-                      alignItems: "center",
-                      gap: 6,
-                    }}
-                  >
-                    {/* Local */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        flex: 1,
-                        minWidth: 0,
-                      }}
-                    >
-                      <TeamFlag name={m.team_home} />
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#CBD5E1",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                        }}
-                      >
-                        {m.team_home}
-                      </span>
-                    </div>
-
-                    {/* Marcador */}
-                    <div
-                      style={{
-                        textAlign: "center",
-                        flexShrink: 0,
-                        minWidth: 52,
-                      }}
-                    >
-                      <div
-                        style={{
-                          fontSize: 17,
-                          fontWeight: 900,
-                          color: "#F1F5F9",
-                          fontVariantNumeric: "tabular-nums",
-                          letterSpacing: 1,
-                          lineHeight: 1,
-                        }}
-                      >
-                        {m.score_home !== null
-                          ? `${m.score_home}-${m.score_away}`
-                          : "-"}
-                      </div>
-                      <div
-                        style={{ fontSize: 9, color: "#334155", marginTop: 2 }}
-                      >
-                        resultado
-                      </div>
-                    </div>
-
-                    {/* Visitante */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        gap: 6,
-                        flex: 1,
-                        minWidth: 0,
-                        justifyContent: "flex-end",
-                      }}
-                    >
-                      <span
-                        style={{
-                          fontSize: 12,
-                          fontWeight: 600,
-                          color: "#CBD5E1",
-                          whiteSpace: "nowrap",
-                          overflow: "hidden",
-                          textOverflow: "ellipsis",
-                          textAlign: "right",
-                        }}
-                      >
-                        {m.team_away}
-                      </span>
-                      <TeamFlag name={m.team_away} />
-                    </div>
-                  </div>
-
-                  {/* Predicción + puntos */}
-                  <div
-                    style={{
-                      borderTop: "1px solid rgba(255,255,255,0.06)",
-                      padding: "10px 12px",
-                      background: hasPred ? ps.bg : "rgba(0,0,0,0.1)",
-                    }}
-                  >
-                    {/* Fila principal: predicción y badge de puntos */}
-                    <div
-                      style={{
-                        display: "flex",
-                        alignItems: "center",
-                        justifyContent: "space-between",
-                      }}
-                    >
-                      <div
-                        style={{
-                          display: "flex",
-                          alignItems: "center",
-                          gap: 8,
-                        }}
-                      >
-                        <span style={{ fontSize: 11, color: "#475569" }}>
-                          Su predicción:
-                        </span>
-                        {hasPred ? (
-                          <span
-                            style={{
-                              fontSize: 16,
-                              fontWeight: 900,
-                              color: ps.color,
-                              fontVariantNumeric: "tabular-nums",
-                              letterSpacing: 1,
-                            }}
-                          >
-                            {m.pred.pred_home}-{m.pred.pred_away}
-                          </span>
-                        ) : (
-                          <span
-                            style={{
-                              fontSize: 12,
-                              color: "#334155",
-                              fontStyle: "italic",
-                            }}
-                          >
-                            Sin predicción
-                          </span>
-                        )}
-                      </div>
-                      {hasPred && (
-                        <div
-                          style={{
-                            display: "flex",
-                            alignItems: "center",
-                            gap: 6,
-                          }}
-                        >
-                          <span
-                            style={{
-                              fontSize: 10,
-                              color: ps.color,
-                              fontWeight: 600,
-                            }}
-                          >
-                            {ps.label}
-                          </span>
-                          <div
-                            style={{
-                              background: "rgba(0,0,0,0.25)",
-                              border: `1px solid ${ps.border}`,
-                              borderRadius: 8,
-                              padding: "3px 9px",
-                            }}
-                          >
-                            <span
-                              style={{
-                                fontSize: 13,
-                                fontWeight: 900,
-                                color: ps.color,
-                              }}
-                            >
-                              {(m.pred.points ?? 0) > 0
-                                ? `+${m.pred.points}`
-                                : "0"}{" "}
-                              pts
-                            </span>
-                          </div>
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Desglose de puntos */}
-                    {hasPred &&
-                      m.score_home !== null &&
-                      (() => {
-                        const { detalles } = desglosePuntos(
-                          m.pred.pred_home,
-                          m.pred.pred_away,
-                          m.score_home,
-                          m.score_away,
-                        );
-                        return (
-                          <div
-                            style={{
-                              marginTop: 8,
-                              display: "flex",
-                              flexWrap: "wrap",
-                              gap: 4,
-                            }}
-                          >
-                            {detalles.map((d, idx) => {
-                              const esSinPts = d.startsWith("Sin");
-                              const esExacto = d.includes("exacto");
-                              const color = esExacto
-                                ? "#22C55E"
-                                : esSinPts
-                                  ? "#475569"
-                                  : "#60A5FA";
-                              const bg = esExacto
-                                ? "rgba(34,197,94,0.12)"
-                                : esSinPts
-                                  ? "rgba(71,85,105,0.15)"
-                                  : "rgba(96,165,250,0.12)";
-                              return (
-                                <span
-                                  key={idx}
-                                  style={{
-                                    fontSize: 10,
-                                    fontWeight: 600,
-                                    color,
-                                    background: bg,
-                                    border: `1px solid ${color}33`,
-                                    borderRadius: 6,
-                                    padding: "2px 7px",
-                                    lineHeight: 1.6,
-                                  }}
-                                >
-                                  {d}
-                                </span>
-                              );
-                            })}
-                          </div>
-                        );
-                      })()}
-                  </div>
+              {!loadingToday && todayPreds.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <p style={{ fontSize: 32, margin: "0 0 8px" }}>🔒</p>
+                  <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>
+                    No hay partidos cerrados hoy con predicciones visibles
+                  </p>
                 </div>
-              );
-            })}
+              )}
+
+              {!loadingToday &&
+                todayPreds.map((m) => <MatchPredictionCard key={m.id} m={m} />)}
+            </>
+          )}
+
+          {tab === "history" && (
+            <>
+              {loadingHistory && (
+                <p
+                  style={{
+                    color: "#94A3B8",
+                    textAlign: "center",
+                    padding: "32px 0",
+                    fontSize: 13,
+                  }}
+                >
+                  Cargando historial...
+                </p>
+              )}
+
+              {!loadingHistory && historyPreds.length === 0 && (
+                <div style={{ textAlign: "center", padding: "40px 0" }}>
+                  <p style={{ fontSize: 32, margin: "0 0 8px" }}>📭</p>
+                  <p style={{ color: "#475569", fontSize: 13, margin: 0 }}>
+                    Aún no hay partidos finalizados
+                  </p>
+                </div>
+              )}
+
+              {!loadingHistory &&
+                historyGroups.map(([dateKey, matchesInGroup]) => (
+                  <div key={dateKey} style={{ marginBottom: 18 }}>
+                    <div
+                      style={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        marginBottom: 8,
+                        padding: "0 2px",
+                      }}
+                    >
+                      <span
+                        style={{
+                          fontSize: 11,
+                          fontWeight: 800,
+                          color: "#64748B",
+                          textTransform: "uppercase",
+                          letterSpacing: 0.4,
+                        }}
+                      >
+                        {formatGroupHeader(dateKey)}
+                      </span>
+                      <div
+                        style={{
+                          flex: 1,
+                          height: 1,
+                          background: "rgba(255,255,255,0.07)",
+                        }}
+                      />
+                    </div>
+                    {matchesInGroup.map((m) => (
+                      <MatchPredictionCard key={m.id} m={m} />
+                    ))}
+                  </div>
+                ))}
+            </>
+          )}
 
           <div style={{ height: 8 }} />
         </div>

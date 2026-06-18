@@ -45,20 +45,17 @@ export default function History({ user }) {
   useEffect(() => {
     loadHistory();
 
-    // Realtime: cuando un match cambia de estado o marcador
     const matchesChannel = supabase
       .channel("history-matches-updates")
       .on(
         "postgres_changes",
         { event: "UPDATE", schema: "public", table: "matches" },
         () => {
-          // Recarga el historial completo para reflejar nuevo marcador/estado
           loadHistory(true);
         },
       )
       .subscribe();
 
-    // Realtime: cuando los puntos de una predicción se actualizan
     const predictionsChannel = supabase
       .channel("history-predictions-updates")
       .on(
@@ -70,7 +67,6 @@ export default function History({ user }) {
           filter: `user_id=eq.${user.id}`,
         },
         (payload) => {
-          // Actualiza solo la predicción que cambió, sin recargar todo
           setItems((prev) =>
             prev.map((p) =>
               p.id === payload.new.id ? { ...p, ...payload.new } : p,
@@ -103,6 +99,18 @@ export default function History({ user }) {
 
   const finished = items.filter((p) => p.match.status === "finished");
   const totalPoints = finished.reduce((acc, p) => acc + (p.points || 0), 0);
+
+  // Agrupar por fecha LOCAL del dispositivo (respeta UTC-5 Colombia)
+  const grouped = items.reduce((acc, p) => {
+    const dateKey = p.match.match_date
+      ? new Date(p.match.match_date).toLocaleDateString("en-CA")
+      : "sin-fecha";
+    if (!acc[dateKey]) acc[dateKey] = [];
+    acc[dateKey].push(p);
+    return acc;
+  }, {});
+
+  const sortedDates = Object.keys(grouped).sort((a, b) => b.localeCompare(a));
 
   return (
     <div style={{ maxWidth: 448, margin: "0 auto", padding: "24px 16px 0" }}>
@@ -209,7 +217,39 @@ export default function History({ user }) {
       )}
 
       {!loading &&
-        items.map((p) => <HistoryMatchCard key={p.id} prediction={p} />)}
+        sortedDates.map((dateKey) => {
+          const label = new Date(dateKey + "T12:00:00").toLocaleDateString(
+            "es-CO",
+            {
+              weekday: "long",
+              day: "numeric",
+              month: "long",
+            },
+          );
+
+          return (
+            <div key={dateKey} style={{ marginBottom: 24 }}>
+              <div
+                style={{
+                  fontSize: 11,
+                  fontWeight: 700,
+                  color: "#FBBF24",
+                  textTransform: "uppercase",
+                  letterSpacing: "0.06em",
+                  padding: "4px 0 8px",
+                  borderBottom: "1px solid rgba(255,255,255,0.07)",
+                  marginBottom: 8,
+                }}
+              >
+                {label}
+              </div>
+
+              {grouped[dateKey].map((p) => (
+                <HistoryMatchCard key={p.id} prediction={p} />
+              ))}
+            </div>
+          );
+        })}
     </div>
   );
 }
