@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import Login from "./pages/Login";
 import Home from "./pages/Home";
+import Bracket from "./pages/Bracket";
 import History from "./pages/History";
 import Ranking from "./pages/Ranking";
 import Rules from "./pages/Rules";
@@ -79,12 +80,11 @@ export default function App() {
         }}
       >
         {page === "home" && <Home user={user} />}
+        {page === "bracket" && <Bracket />}
         {page === "history" && <History user={user} />}
         {page === "ranking" && <Ranking user={user} />}
         {page === "rules" && <Rules />}
-        {page === "profile" && (
-          <Profile user={user} onLogout={handleLogout} />
-        )}
+        {page === "profile" && <Profile user={user} onLogout={handleLogout} />}
       </div>
 
       <div

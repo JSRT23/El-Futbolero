@@ -56,15 +56,10 @@ function mapStatus(s) {
  * IMPORTANTE — bug conocido de football-data.org: el campo score.penalties
  * NO es confiable (puede venir duplicado, ej. {home:4, away:4} cuando el
  * resultado real fue 3-4). El dato correcto se obtiene calculando la
- * diferencia entre fullTime y regularTime, ya que fullTime SÍ incluye los
- * goles acumulados de la tanda de penales sumados al resultado regular:
+ * diferencia entre fullTime y regularTime:
  *
  *   penalty_home = fullTime.home - regularTime.home
  *   penalty_away = fullTime.away - regularTime.away
- *
- * Verificado con datos reales:
- *   Germany 4 / Paraguay 5 (fullTime) − 1/1 (regularTime) = 3-4 ✅
- *   Netherlands 3 / Morocco 4 (fullTime) − 1/1 (regularTime) = 2-3 ✅
  */
 function extractScore(m) {
   const score = m.score || {};
@@ -73,9 +68,6 @@ function extractScore(m) {
   const full = score.fullTime;
   const wentToPenalties = score.duration === "PENALTY_SHOOTOUT";
 
-  // Resultado a mostrar como "RESULTADO": siempre el de 90' (regularTime).
-  // Si por algún motivo no viene regularTime, usamos fullTime como respaldo
-  // (solo aplica a partidos que NO se fueron a penales).
   const matchScore = regular?.home != null ? regular : full;
 
   let penalty_home = null;
@@ -128,7 +120,7 @@ async function fetchMatches() {
 // El trigger fn_recalcular_puntos_partido falla en algunos entornos cuando
 // se hace un INSERT (upsert con nueva fila). Solución:
 //   1. Consultar qué ids ya existen en la tabla.
-//   2. Los que YA EXISTEN  → UPDATE solo (score_home, score_away, penales, status, updated_at).
+//   2. Los que YA EXISTEN  → UPDATE solo (score_home, score_away, penales, stage, status, updated_at).
 //   3. Los que NO EXISTEN  → INSERT limpio con todos los campos.
 // Así evitamos que el trigger rompa el INSERT de partidos nuevos, y los
 // UPDATEs solo tocan los campos que realmente cambian.
@@ -184,6 +176,7 @@ async function syncRows(rows) {
             penalty_home: r.penalty_home,
             penalty_away: r.penalty_away,
             went_to_penalties: r.went_to_penalties,
+            stage: r.stage,
             status: r.status,
             home_crest: r.home_crest,
             away_crest: r.away_crest,
@@ -353,6 +346,7 @@ async function syncOnce() {
       penalty_home,
       penalty_away,
       went_to_penalties,
+      stage: m.stage || null,
       status: mapStatus(m.status),
       updated_at: new Date().toISOString(),
     };

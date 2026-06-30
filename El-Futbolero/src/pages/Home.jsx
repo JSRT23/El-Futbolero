@@ -85,9 +85,14 @@ export default function Home({ user }) {
   const [selectedDay, setSelectedDay] = useState("today"); // "today" | "tomorrow"
   const [menuOpen, setMenuOpen] = useState(false);
 
-  // Para que la suscripción en tiempo real siempre filtre según el
-  // día actualmente seleccionado, sin tener que recrear el canal
-  // cada vez que cambia selectedDay.
+  // Para que la suscripción en tiempo real Y el refresco en segundo
+  // plano (setInterval / visibilitychange) siempre filtren según el
+  // día actualmente seleccionado, sin tener que recrear esos efectos
+  // cada vez que cambia selectedDay. loadData() lee SIEMPRE de este
+  // ref (nunca del state "selectedDay" directamente), porque los
+  // efectos con dependencias [] capturan una sola vez la función y,
+  // si usaran el state por closure, quedarían "congelados" en el
+  // valor que tenía selectedDay al montar el componente.
   const selectedDayRef = useRef(selectedDay);
   useEffect(() => {
     selectedDayRef.current = selectedDay;
@@ -178,7 +183,17 @@ export default function Home({ user }) {
 
   const loadData = async (silent = false) => {
     if (!silent) setLoading(true);
-    const { start: dayStart, end: dayEnd } = getDayRange(selectedDay);
+    // IMPORTANTE: se usa selectedDayRef.current (no el state
+    // "selectedDay" directo) porque esta función también es invocada
+    // desde el setInterval/visibilitychange del efecto de arriba, que
+    // se crea una sola vez con dependencias []. Si leyera "selectedDay"
+    // por closure, esa llamada quedaría siempre fija en el valor que
+    // tenía "selectedDay" cuando se montó el componente (p. ej.
+    // "today"), y cada refresco automático pisaría el estado con los
+    // partidos de hoy aunque el usuario hubiera seleccionado "mañana".
+    const { start: dayStart, end: dayEnd } = getDayRange(
+      selectedDayRef.current,
+    );
 
     const { data: matchesData, error: matchesError } = await supabase
       .from("matches")

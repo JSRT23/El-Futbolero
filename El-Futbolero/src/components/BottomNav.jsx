@@ -15,6 +15,7 @@ const IconBall = ({ size = 22 }) => (
     <path d="M12 22v-6l-5-3-4.68 2.73" />
   </svg>
 );
+
 const IconHistory = ({ size = 22 }) => (
   <svg
     width={size}
@@ -32,6 +33,7 @@ const IconHistory = ({ size = 22 }) => (
     <path d="M12 7v5l3 3" />
   </svg>
 );
+
 const IconTrophy = ({ size = 22 }) => (
   <svg
     width={size}
@@ -48,6 +50,7 @@ const IconTrophy = ({ size = 22 }) => (
     <path d="M17 4c0 0 2 0 2 2s-2 4-4 4M7 4c0 0-2 0-2 2s2 4 4 4" />
   </svg>
 );
+
 const IconClipboard = ({ size = 22 }) => (
   <svg
     width={size}
@@ -64,6 +67,7 @@ const IconClipboard = ({ size = 22 }) => (
     <rect x="8" y="2" width="8" height="4" rx="1" />
   </svg>
 );
+
 const IconUser = ({ size = 22 }) => (
   <svg
     width={size}
@@ -81,9 +85,33 @@ const IconUser = ({ size = 22 }) => (
   </svg>
 );
 
+// Ícono de llave/bracket — dos ramas convergiendo, representa la eliminatoria
+const IconBracket = ({ size = 22 }) => (
+  <svg
+    width={size}
+    height={size}
+    viewBox="0 0 24 24"
+    fill="none"
+    stroke="currentColor"
+    strokeWidth="1.8"
+    strokeLinecap="round"
+    strokeLinejoin="round"
+    aria-hidden="true"
+  >
+    <path d="M4 5h4v4H4z" />
+    <path d="M4 15h4v4H4z" />
+    <path d="M8 7h3a2 2 0 0 1 2 2v0" />
+    <path d="M8 17h3a2 2 0 0 1 2-2v0" />
+    <path d="M13 9v6" />
+    <path d="M13 12h4" />
+    <path d="M17 9h3v6h-3z" />
+  </svg>
+);
+
 export default function BottomNav({ active, onChange }) {
   const items = [
     { key: "home", label: "Partidos", Icon: IconBall },
+    { key: "bracket", label: "Llaves", Icon: IconBracket },
     { key: "history", label: "Historial", Icon: IconHistory },
     { key: "ranking", label: "Ranking", Icon: IconTrophy },
     { key: "rules", label: "Reglas", Icon: IconClipboard },
