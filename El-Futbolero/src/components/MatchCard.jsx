@@ -71,6 +71,8 @@ export default function MatchCard({ match, prediction, onSave }) {
   const isLocked = matchState === "locked";
   const isOpen = matchState === "open";
 
+  const wentToPenalties = Boolean(match.went_to_penalties);
+
   const handleSave = () => {
     if (home === "" || away === "") return;
     onSave({
@@ -166,6 +168,13 @@ export default function MatchCard({ match, prediction, onSave }) {
           <span className="text-[10px] text-text-muted font-medium uppercase tracking-wide">
             {isFinished || isLive ? "Resultado" : "Tu predicción"}
           </span>
+
+          {/* Resultado de penales (solo si el partido terminó así) */}
+          {isFinished && wentToPenalties && (
+            <span className="mt-0.5 text-[10px] bg-accent/15 text-accent font-bold px-2 py-0.5 rounded-full whitespace-nowrap">
+              Penales {match.penalty_home ?? "-"}–{match.penalty_away ?? "-"}
+            </span>
+          )}
         </div>
 
         <div className="flex flex-col items-center gap-1.5 flex-1 min-w-0">

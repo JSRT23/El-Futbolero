@@ -49,6 +49,52 @@ function mapStatus(s) {
   return "scheduled";
 }
 
+/**
+ * Extrae el marcador que se debe MOSTRAR como "RESULTADO" (90 minutos /
+ * tiempo regular) y, por separado, el resultado de la tanda de penales.
+ *
+ * IMPORTANTE — bug conocido de football-data.org: el campo score.penalties
+ * NO es confiable (puede venir duplicado, ej. {home:4, away:4} cuando el
+ * resultado real fue 3-4). El dato correcto se obtiene calculando la
+ * diferencia entre fullTime y regularTime, ya que fullTime SÍ incluye los
+ * goles acumulados de la tanda de penales sumados al resultado regular:
+ *
+ *   penalty_home = fullTime.home - regularTime.home
+ *   penalty_away = fullTime.away - regularTime.away
+ *
+ * Verificado con datos reales:
+ *   Germany 4 / Paraguay 5 (fullTime) − 1/1 (regularTime) = 3-4 ✅
+ *   Netherlands 3 / Morocco 4 (fullTime) − 1/1 (regularTime) = 2-3 ✅
+ */
+function extractScore(m) {
+  const score = m.score || {};
+
+  const regular = score.regularTime;
+  const full = score.fullTime;
+  const wentToPenalties = score.duration === "PENALTY_SHOOTOUT";
+
+  // Resultado a mostrar como "RESULTADO": siempre el de 90' (regularTime).
+  // Si por algún motivo no viene regularTime, usamos fullTime como respaldo
+  // (solo aplica a partidos que NO se fueron a penales).
+  const matchScore = regular?.home != null ? regular : full;
+
+  let penalty_home = null;
+  let penalty_away = null;
+
+  if (wentToPenalties && regular?.home != null && full?.home != null) {
+    penalty_home = full.home - regular.home;
+    penalty_away = full.away - regular.away;
+  }
+
+  return {
+    score_home: matchScore?.home ?? null,
+    score_away: matchScore?.away ?? null,
+    penalty_home,
+    penalty_away,
+    went_to_penalties: wentToPenalties,
+  };
+}
+
 function calcularIntervalo(rows) {
   if (rows.some((r) => r.status === "live")) return INTERVAL_LIVE;
   const now = Date.now();
@@ -82,7 +128,7 @@ async function fetchMatches() {
 // El trigger fn_recalcular_puntos_partido falla en algunos entornos cuando
 // se hace un INSERT (upsert con nueva fila). Solución:
 //   1. Consultar qué ids ya existen en la tabla.
-//   2. Los que YA EXISTEN  → UPDATE solo (score_home, score_away, status, updated_at).
+//   2. Los que YA EXISTEN  → UPDATE solo (score_home, score_away, penales, status, updated_at).
 //   3. Los que NO EXISTEN  → INSERT limpio con todos los campos.
 // Así evitamos que el trigger rompa el INSERT de partidos nuevos, y los
 // UPDATEs solo tocan los campos que realmente cambian.
@@ -135,6 +181,9 @@ async function syncRows(rows) {
           .update({
             score_home: r.score_home,
             score_away: r.score_away,
+            penalty_home: r.penalty_home,
+            penalty_away: r.penalty_away,
+            went_to_penalties: r.went_to_penalties,
             status: r.status,
             home_crest: r.home_crest,
             away_crest: r.away_crest,
@@ -159,6 +208,8 @@ async function syncRows(rows) {
 }
 
 // ─── Cálculo de puntos ───────────────────────────────────────────────────────
+// Importante: los puntos de la predicción SIEMPRE se calculan contra el
+// marcador de 90' (score_home/score_away), nunca contra los penales.
 
 async function calcularPuntosPartidosFinalizados(rows) {
   const { calcularPuntos } = await import("../src/lib/scoring.js");
@@ -217,8 +268,11 @@ async function calcularPuntosPartidosFinalizados(rows) {
       match.score_home !== null
         ? `${match.score_home}-${match.score_away}`
         : "?-?";
+    const pen = match.went_to_penalties
+      ? ` (pen. ${match.penalty_home}-${match.penalty_away})`
+      : "";
     console.log(
-      `  ✅ ${match.team_home} ${icon} ${match.team_away}` +
+      `  ✅ ${match.team_home} ${icon}${pen} ${match.team_away}` +
         (cambios > 0
           ? ` → ${cambios} predicción(es) actualizada(s)`
           : " → sin cambios"),
@@ -246,13 +300,18 @@ function logPartidosCercanos(rows) {
     });
     const marc =
       r.score_home !== null ? `${r.score_home}-${r.score_away}` : "vs";
+    const pen = r.went_to_penalties
+      ? ` (pen. ${r.penalty_home}-${r.penalty_away})`
+      : "";
     const est =
       r.status === "live"
         ? "🔴 EN VIVO"
         : r.status === "finished"
           ? "✅ FIN"
           : "🕐 PROG";
-    console.log(`    ${est} ${hora} | ${r.team_home} ${marc} ${r.team_away}`);
+    console.log(
+      `    ${est} ${hora} | ${r.team_home} ${marc}${pen} ${r.team_away}`,
+    );
   });
 }
 
@@ -273,18 +332,31 @@ async function syncOnce() {
       (skipped > 0 ? `, ${skipped} omitidos (equipos TBD).` : "."),
   );
 
-  const rows = valid.map((m) => ({
-    id: String(m.id),
-    team_home: m.homeTeam.name,
-    team_away: m.awayTeam.name,
-    home_crest: m.homeTeam.crest || null,
-    away_crest: m.awayTeam.crest || null,
-    match_date: m.utcDate,
-    score_home: m.score?.fullTime?.home ?? null,
-    score_away: m.score?.fullTime?.away ?? null,
-    status: mapStatus(m.status),
-    updated_at: new Date().toISOString(),
-  }));
+  const rows = valid.map((m) => {
+    const {
+      score_home,
+      score_away,
+      penalty_home,
+      penalty_away,
+      went_to_penalties,
+    } = extractScore(m);
+
+    return {
+      id: String(m.id),
+      team_home: m.homeTeam.name,
+      team_away: m.awayTeam.name,
+      home_crest: m.homeTeam.crest || null,
+      away_crest: m.awayTeam.crest || null,
+      match_date: m.utcDate,
+      score_home,
+      score_away,
+      penalty_home,
+      penalty_away,
+      went_to_penalties,
+      status: mapStatus(m.status),
+      updated_at: new Date().toISOString(),
+    };
+  });
 
   const live = rows.filter((r) => r.status === "live").length;
   const finished = rows.filter((r) => r.status === "finished").length;
