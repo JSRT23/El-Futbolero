@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { supabase } from "../lib/supabaseClient";
+import worldCupTrophy from "../assets/world-cup-trophy.png";
 
 const IconShieldGray = () => (
   <svg
@@ -77,48 +78,14 @@ const IconChevronRight = () => (
 // Copa del Mundo: silueta más fiel a la real (cuerpo en espiral ensanchado
 // hacia arriba, base ancha, tallo corto).
 const IconWorldCup = () => (
-  <svg
-    width="58"
-    height="70"
-    viewBox="0 0 58 70"
-    fill="none"
-    xmlns="http://www.w3.org/2000/svg"
-    aria-hidden="true"
-  >
-    <defs>
-      <linearGradient id="wcGold" x1="0" y1="0" x2="0" y2="1">
-        <stop offset="0%" stopColor="#FEF3C7" />
-        <stop offset="35%" stopColor="#FBBF24" />
-        <stop offset="70%" stopColor="#D97706" />
-        <stop offset="100%" stopColor="#92400E" />
-      </linearGradient>
-    </defs>
-    <ellipse cx="29" cy="65" rx="16" ry="4" fill="url(#wcGold)" />
-    <rect x="20" y="58" width="18" height="8" rx="2" fill="url(#wcGold)" />
-    <path d="M25 44h8l-1.5 14h-5z" fill="url(#wcGold)" />
-    <path
-      d="M29 4c-6 0-10 4-10 9 0 4 2 7 5 9-4 1-7 4-7 8 0 5 5 9 12 9s12-4 12-9c0-4-3-7-7-8 3-2 5-5 5-9 0-5-4-9-10-9z"
-      fill="url(#wcGold)"
-    />
-    <path
-      d="M22 13c0 4 2 7 5 9M36 13c0 4-2 7-5 9M21 30c0 3 2 5 4 6M37 30c0 3-2 5-4 6"
-      stroke="#92400E"
-      strokeWidth="1"
-      strokeLinecap="round"
-      opacity="0.5"
-      fill="none"
-    />
-    <circle
-      cx="29"
-      cy="6"
-      r="4.5"
-      fill="#FEF3C7"
-      stroke="#92400E"
-      strokeWidth="0.6"
-    />
-  </svg>
+  <img
+    src={worldCupTrophy}
+    alt="Copa del Mundo"
+    width={64}
+    height={78}
+    style={{ objectFit: "contain" }}
+  />
 );
-
 // Rondas principales del cuadro de eliminación directa, en orden, con la
 // cantidad FIJA de cupos que tiene cada una (independiente de cuántos
 // partidos haya cargado football-data.org todavía).
