@@ -131,7 +131,7 @@ const MAIN_ROUNDS = [
 ];
 
 const CARD_WIDTH = 280;
-const CARD_HEIGHT = 102;
+const CARD_HEIGHT = 122;
 const CARD_GAP = 18;
 const CONNECTOR_WIDTH = 26;
 
@@ -176,10 +176,20 @@ function getDateLabel(match) {
   return `${wdCap}, ${dm}, ${timeStr}`;
 }
 
-/** Determina el nombre del equipo ganador de un partido finalizado,
- * considerando penales si el resultado regular quedó empatado. */
+/** Determina el nombre del equipo ganador de un partido finalizado.
+ *
+ * Prioriza "winner_team" (calculado en el backend a partir del campo
+ * oficial score.winner de football-data.org), porque score_home/
+ * score_away SIEMPRE muestran el marcador de 90 minutos tal cual (p.
+ * ej. "1-1" o "2-2"), incluso cuando el partido se definió después en
+ * el alargue o en penales — comparar esos dos números directamente ya
+ * no sirve para saber quién avanza. Si winner_team no está presente
+ * (partidos antiguos o cupos virtuales), se usa como respaldo la
+ * comparación directa del marcador mostrado. */
 function getWinnerName(match) {
   if (!match || match.status !== "finished") return null;
+  if (match.winner_team) return match.winner_team;
+
   if (match.score_home == null || match.score_away == null) return null;
 
   if (match.score_home > match.score_away) return match.team_home;
@@ -220,6 +230,8 @@ function makeVirtualSlot(
       penalty_home: null,
       penalty_away: null,
       went_to_penalties: false,
+      went_to_extra_time: false,
+      winner_team: null,
       status: "scheduled",
       match_date: null,
       isVirtual: true,
@@ -507,6 +519,23 @@ function BracketMatchCard({ match, compact }) {
         isWinner={!!winnerName && winnerName === match.team_away}
         showScore={showScore && !!match.team_away}
       />
+
+      {state === "finished" && match.went_to_penalties && (
+        <div className="text-center mt-0.5">
+          <span className="text-[9px] bg-accent/15 text-accent font-bold px-2 py-0.5 rounded-full">
+            Penales {match.penalty_home ?? "-"}-{match.penalty_away ?? "-"}
+          </span>
+        </div>
+      )}
+      {state === "finished" &&
+        !match.went_to_penalties &&
+        match.went_to_extra_time && (
+          <div className="text-center mt-0.5">
+            <span className="text-[9px] bg-white/8 text-text-muted font-medium px-2 py-0.5 rounded-full">
+              Definido en tiempo extra
+            </span>
+          </div>
+        )}
     </div>
   );
 }
@@ -740,6 +769,8 @@ export default function Bracket() {
               penalty_home: null,
               penalty_away: null,
               went_to_penalties: false,
+              went_to_extra_time: false,
+              winner_team: null,
               status: "scheduled",
               match_date: null,
             };

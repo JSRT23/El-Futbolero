@@ -50,33 +50,63 @@ function mapStatus(s) {
 }
 
 /**
- * Extrae el marcador que se debe MOSTRAR como "RESULTADO" (90 minutos /
- * tiempo regular) y, por separado, el resultado de la tanda de penales.
+ * Estructura real de `score` en football-data.org v4 (confirmada en la
+ * documentación oficial, docs.football-data.org/general/v4/overtime.html
+ * y /general/v4/index.html — "Breaking changes v4"):
  *
- * IMPORTANTE — bug conocido de football-data.org: el campo score.penalties
- * NO es confiable (puede venir duplicado, ej. {home:4, away:4} cuando el
- * resultado real fue 3-4). El dato correcto se obtiene calculando la
- * diferencia entre fullTime y regularTime:
+ *   score.winner       "HOME_TEAM" | "AWAY_TEAM" | "DRAW" | null
+ *                      Campo oficial que la propia API ya calcula: quién
+ *                      ganó el partido en su totalidad (90' + alargue +
+ *                      penales si los hubo). Es la fuente de verdad para
+ *                      saber quién avanza — no hay que inferirlo
+ *                      comparando marcadores.
+ *   score.duration     "REGULAR" | "EXTRA_TIME" | "PENALTY_SHOOTOUT"
+ *   score.regularTime  marcador de los 90 minutos (tiempo reglamentario).
+ *                      Presente siempre que duration !== "REGULAR".
+ *   score.fullTime     marcador FINAL ACUMULADO de todo el partido (90'
+ *                      + alargue + penales sumados). NO es el marcador
+ *                      de 90 minutos cuando hubo alargue o penales — por
+ *                      eso antes se veía "2-1" en vez de "1-1": el
+ *                      código caía a fullTime cuando regularTime no se
+ *                      leía bien, y fullTime ya trae los goles extra
+ *                      sumados.
+ *   score.extraTime    SOLO los goles anotados durante el alargue (no es
+ *                      el marcador acumulado a los 120').
+ *   score.penalties    marcador de la tanda de penales tal cual la
+ *                      entrega la API (no hay que restarle nada a
+ *                      fullTime; esa resta era el bug del comentario
+ *                      anterior, que además sumaba de más si hubo goles
+ *                      en el alargue antes de ir a penales).
  *
- *   penalty_home = fullTime.home - regularTime.home
- *   penalty_away = fullTime.away - regularTime.away
+ * Lo que se MUESTRA en la app (score_home/score_away) es SIEMPRE
+ * regularTime (90 minutos), y lo que decide quién avanza es SIEMPRE
+ * score.winner — dos cosas totalmente independientes.
  */
 function extractScore(m) {
   const score = m.score || {};
 
-  const regular = score.regularTime;
-  const full = score.fullTime;
-  const wentToPenalties = score.duration === "PENALTY_SHOOTOUT";
+  const duration = score.duration;
+  const regularTime = score.regularTime;
+  const fullTime = score.fullTime;
+  const penalties = score.penalties;
+  const winner = score.winner;
 
-  const matchScore = regular?.home != null ? regular : full;
+  const wentToPenalties = duration === "PENALTY_SHOOTOUT";
+  const wentToExtraTime = duration === "EXTRA_TIME" || wentToPenalties;
 
-  let penalty_home = null;
-  let penalty_away = null;
+  // Marcador que se muestra: 90 minutos. Si el partido es de temporada
+  // regular (duration === "REGULAR"), regularTime no viene en la API y
+  // fullTime ya ES el marcador de 90 minutos, así que sirve de respaldo.
+  const matchScore = regularTime?.home != null ? regularTime : fullTime;
 
-  if (wentToPenalties && regular?.home != null && full?.home != null) {
-    penalty_home = full.home - regular.home;
-    penalty_away = full.away - regular.away;
-  }
+  // Marcador de penales tal cual lo entrega la API.
+  const penalty_home = wentToPenalties ? (penalties?.home ?? null) : null;
+  const penalty_away = wentToPenalties ? (penalties?.away ?? null) : null;
+
+  // Quién avanza: se usa el campo oficial score.winner, no se infiere.
+  let winner_team = null;
+  if (winner === "HOME_TEAM") winner_team = m.homeTeam.name;
+  else if (winner === "AWAY_TEAM") winner_team = m.awayTeam.name;
 
   return {
     score_home: matchScore?.home ?? null,
@@ -84,6 +114,8 @@ function extractScore(m) {
     penalty_home,
     penalty_away,
     went_to_penalties: wentToPenalties,
+    went_to_extra_time: wentToExtraTime,
+    winner_team,
   };
 }
 
@@ -176,6 +208,8 @@ async function syncRows(rows) {
             penalty_home: r.penalty_home,
             penalty_away: r.penalty_away,
             went_to_penalties: r.went_to_penalties,
+            went_to_extra_time: r.went_to_extra_time,
+            winner_team: r.winner_team,
             stage: r.stage,
             status: r.status,
             home_crest: r.home_crest,
@@ -264,8 +298,9 @@ async function calcularPuntosPartidosFinalizados(rows) {
     const pen = match.went_to_penalties
       ? ` (pen. ${match.penalty_home}-${match.penalty_away})`
       : "";
+    const ganador = match.winner_team ? ` → avanza ${match.winner_team}` : "";
     console.log(
-      `  ✅ ${match.team_home} ${icon}${pen} ${match.team_away}` +
+      `  ✅ ${match.team_home} ${icon}${pen} ${match.team_away}${ganador}` +
         (cambios > 0
           ? ` → ${cambios} predicción(es) actualizada(s)`
           : " → sin cambios"),
@@ -332,6 +367,8 @@ async function syncOnce() {
       penalty_home,
       penalty_away,
       went_to_penalties,
+      went_to_extra_time,
+      winner_team,
     } = extractScore(m);
 
     return {
@@ -346,6 +383,8 @@ async function syncOnce() {
       penalty_home,
       penalty_away,
       went_to_penalties,
+      went_to_extra_time,
+      winner_team,
       stage: m.stage || null,
       status: mapStatus(m.status),
       updated_at: new Date().toISOString(),
