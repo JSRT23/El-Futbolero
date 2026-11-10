@@ -1,0 +1,45 @@
+# Producción local:  docker compose up --build                      -> http://localhost:8080
+# Desarrollo (HMR):  docker compose --profile dev up --build dev   -> http://localhost:5173
+services:
+  web:
+    build:
+      context: El-Futbolero
+      dockerfile: Dockerfile
+      args:
+        VITE_SUPABASE_URL: ${VITE_SUPABASE_URL:?Falta VITE_SUPABASE_URL. Copia .env.example como .env y completa tus valores}
+        VITE_SUPABASE_ANON_KEY: ${VITE_SUPABASE_ANON_KEY:?Falta VITE_SUPABASE_ANON_KEY. Copia .env.example como .env y completa tus valores}
+    container_name: el-futbolero-web
+    ports:
+      - "${PORT:-8080}:80"
+    restart: unless-stopped
+
+  dev:
+    profiles: ["dev"]
+    build:
+      context: El-Futbolero
+      dockerfile: Dockerfile.dev
+    container_name: el-futbolero-dev
+    ports:
+      - "${DEV_PORT:-5173}:5173"
+    environment:
+      - CHOKIDAR_USEPOLLING=true
+      - VITE_SUPABASE_URL=${VITE_SUPABASE_URL:-}
+      - VITE_SUPABASE_ANON_KEY=${VITE_SUPABASE_ANON_KEY:-}
+    volumes:
+      - ./El-Futbolero:/app
+      - /app/node_modules
+
+  # Sincroniza partidos desde football-data.org hacia Supabase (opcional).
+  #   docker compose --profile sync up --build sync
+  sync:
+    profiles: ["sync"]
+    build:
+      context: El-Futbolero
+      dockerfile: Dockerfile.dev
+    container_name: el-futbolero-sync
+    command: ["node", "scripts/syncMatches.js"]
+    environment:
+      - FOOTBALL_DATA_TOKEN=${FOOTBALL_DATA_TOKEN:-}
+      - SUPABASE_URL=${VITE_SUPABASE_URL:-}
+      - SUPABASE_SERVICE_ROLE_KEY=${SUPABASE_SERVICE_ROLE_KEY:-}
+    restart: unless-stopped
